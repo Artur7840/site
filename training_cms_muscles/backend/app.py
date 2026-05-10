@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager
 from backend.config import Config
 from backend.db import close_db
 from backend.api import delete_workout
+import os 
 
 def create_app():
     app = Flask(__name__, static_folder='../frontend', static_url_path='')
@@ -39,6 +40,7 @@ def create_app():
 
     return app
 
+
 if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
