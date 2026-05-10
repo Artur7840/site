@@ -5,7 +5,7 @@ from backend.config import Config
 from backend.db import close_db
 from backend.api import delete_workout
 
-# Определяем абсолютный путь к папке frontend (на уровень выше backend)
+# Абсолютный путь к папке frontend (она на одном уровне с backend)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 
@@ -14,10 +14,9 @@ def create_app():
     app.config.from_object(Config)
     JWTManager(app)
 
-    # Регистрация закрытия БД после запроса
     app.teardown_appcontext(close_db)
 
-    # Импорт view-функций (здесь нет маршрутов, только функции)
+    # Импортируем view-функции
     from backend.auth import register, login
     from backend.api import (
         get_muscle_groups, get_exercises, get_exercise,
@@ -37,22 +36,21 @@ def create_app():
     app.add_url_rule('/api/workout-exercises/<int:workout_exercise_id>/log', view_func=log_set, methods=['POST'])
     app.add_url_rule('/api/workouts/<int:workout_id>', view_func=delete_workout, methods=['DELETE'])
 
-    # Маршруты для отдачи frontend (один раз)
+    # Маршруты для frontend
     @app.route('/')
     def index():
         return send_from_directory(FRONTEND_DIR, 'index.html')
 
     @app.route('/<path:filename>')
     def serve_frontend(filename):
-        # Проверка, что файл существует (опционально)
         return send_from_directory(FRONTEND_DIR, filename)
 
     return app
 
-# Создаём экземпляр приложения (он понадобится для Gunicorn)
+# Глобальный объект приложения — его будет использовать Gunicorn
 app = create_app()
 
-# Блок для локального запуска (при выполнении python app.py)
+# Локальный запуск (для тестов)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
