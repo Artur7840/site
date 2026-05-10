@@ -1,38 +1,31 @@
+import os
 from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from backend.config import Config
 from backend.db import close_db
 from backend.api import delete_workout
-import os 
-from flask import send_from_directory
 
-# Определяем абсолютный путь к папке frontend
+# Определяем абсолютный путь к папке frontend (на уровень выше backend)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 
-@app.route('/')
-def serve_index():
-    return send_from_directory(FRONTEND_DIR, 'index.html')
-
-@app.route('/<path:filename>')
-def serve_static_files(filename):
-    # Защита: не отдаём файлы из других папок
-    return send_from_directory(FRONTEND_DIR, filename)
-    
 def create_app():
-    app = Flask(__name__, static_folder='../frontend', static_url_path='')
+    app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
     app.config.from_object(Config)
     JWTManager(app)
 
     # Регистрация закрытия БД после запроса
     app.teardown_appcontext(close_db)
 
+    # Импорт view-функций (здесь нет маршрутов, только функции)
     from backend.auth import register, login
     from backend.api import (
         get_muscle_groups, get_exercises, get_exercise,
-        create_workout, get_my_workouts, get_workout, log_set
+        create_workout, get_my_workouts, get_workout, log_set,
+        delete_workout
     )
 
+    # API маршруты
     app.add_url_rule('/api/register', view_func=register, methods=['POST'])
     app.add_url_rule('/api/login', view_func=login, methods=['POST'])
     app.add_url_rule('/api/muscle-groups', view_func=get_muscle_groups, methods=['GET'])
@@ -44,19 +37,22 @@ def create_app():
     app.add_url_rule('/api/workout-exercises/<int:workout_exercise_id>/log', view_func=log_set, methods=['POST'])
     app.add_url_rule('/api/workouts/<int:workout_id>', view_func=delete_workout, methods=['DELETE'])
 
+    # Маршруты для отдачи frontend (один раз)
     @app.route('/')
     def index():
-        return send_from_directory('../frontend', 'index.html')
-    
-    @app.route('/<path:path>')
-    def static_files(path):
-        return send_from_directory('../frontend', path)
+        return send_from_directory(FRONTEND_DIR, 'index.html')
+
+    @app.route('/<path:filename>')
+    def serve_frontend(filename):
+        # Проверка, что файл существует (опционально)
+        return send_from_directory(FRONTEND_DIR, filename)
 
     return app
 
+# Создаём экземпляр приложения (он понадобится для Gunicorn)
+app = create_app()
 
-
-
+# Блок для локального запуска (при выполнении python app.py)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
