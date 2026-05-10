@@ -4,7 +4,21 @@ from backend.config import Config
 from backend.db import close_db
 from backend.api import delete_workout
 import os 
+from flask import send_from_directory
 
+# Определяем абсолютный путь к папке frontend
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(FRONTEND_DIR, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static_files(filename):
+    # Защита: не отдаём файлы из других папок
+    return send_from_directory(FRONTEND_DIR, filename)
+    
 def create_app():
     app = Flask(__name__, static_folder='../frontend', static_url_path='')
     app.config.from_object(Config)
@@ -39,6 +53,8 @@ def create_app():
         return send_from_directory('../frontend', path)
 
     return app
+
+
 
 
 if __name__ == '__main__':
