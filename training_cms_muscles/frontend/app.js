@@ -17,7 +17,7 @@ async function fetchJson(url, options = {}) {
     return res.json();
 }
 
-// ---------- Favorites localStorage ----------
+// ---------- Favorites (localStorage) ----------
 function getFavorites() {
     const fav = localStorage.getItem('favorites');
     return fav ? JSON.parse(fav) : [];
@@ -63,5 +63,4 @@ function updateAuthButton() {
     }
 }
 
-// Вызываем обновление кнопки после загрузки каждой страницы
 document.addEventListener('DOMContentLoaded', updateAuthButton);
